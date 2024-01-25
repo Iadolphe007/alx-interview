@@ -1,38 +1,48 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+"""script that reads from stdin
+and parses log files"""
 
 import sys
+import re
 
-# Initialize counters
-total_size = 0
-status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
+count = 10
+increment = 0
+totalSize = 0
+codes = {}
+
+
+def printStatistics(totalSize, codes):
+    """prints out the statstics"""
+    # print size
+    print("File size: {}".format(totalSize))
+
+    # print codes
+    for code, value in sorted(codes.items()):
+        if value > 0:
+            print("{}: {}".format(code, value))
+
 
 try:
-    # Read lines from standard input
-    for i, line in enumerate(sys.stdin):
-        try:
-            # Parse line into components
-            ip_address, _, _, timestamp, _, method, resource, protocol, status_code, file_size = line.split()
+    for index, line in enumerate(sys.stdin):
+        index += 1
+        s = r'(\S+) - \[([^]]+)\] "GET /projects/260 HTTP/1.1" (\d+) (\d+)'
+        match = re.match(s, line)
+        if match:
+            """get relevant data from the line"""
+            ip_address, date, status_code, file_size = match.groups()
+            totalSize += int(file_size)
 
-            # Increment counters
-            total_size += int(file_size)
-            status_codes[int(status_code)] += 1
+            """count status codes of each line"""
+            status_code = int(status_code)
+            if status_code in codes:
+                codes[status_code] += 1
+            else:
+                codes[status_code] = 1
 
-            # Print statistics every 10 lines
-            if i % 10 == 9:
-                print("File size: {}".format(total_size))
-                for code in sorted(status_codes):
-                    if status_codes[code] > 0:
-                        print("{}: {}".format(code, status_codes[code]))
-                print()
-
-        except ValueError:
-            # Skip lines that do not match expected format
-            continue
-
+            """check if index[9] i.e position 10, 20, 30... print statistics"""
+            if index % 10 == 0:
+                printStatistics(totalSize, codes)
 except KeyboardInterrupt:
-    # Print final statistics on interrupt
-    print("File size: {}".format(total_size))
-    for code in sorted(status_codes):
-        if status_codes[code] > 0:
-            print("{}: {}".format(code, status_codes[code]))
-    sys.exit(0)
+    pass
+finally:
+    printStatistics(totalSize, codes)
