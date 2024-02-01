@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 def validUTF8(data):
     def check_bytes(num_bytes, data):
         for i in range(1, num_bytes):
